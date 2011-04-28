@@ -804,6 +804,8 @@ current_scale // current scale of the stack
     return view;
   };
 
+  var self = this;
+
   this.onclick = function (e) {
     var locid;
     var m = ui.getMouse(e);
@@ -811,11 +813,11 @@ current_scale // current scale of the stack
     // take into account current local offset coordinates and scale
     var pos_x = m.offsetX;
     var pos_y = m.offsetY;
-    var pos_z = this.phys2pixZ(project.coordinates.z);
+    var pos_z = self.phys2pixZ(project.coordinates.z);
 
     // get physical coordinates for node position creation
-    var phys_x = this.pix2physX(pos_x);
-    var phys_y = this.pix2physY(pos_y);
+    var phys_x = self.pix2physX(pos_x);
+    var phys_y = self.pix2physY(pos_y);
     var phys_z = project.coordinates.z;
 
     if (e.ctrlKey) {
