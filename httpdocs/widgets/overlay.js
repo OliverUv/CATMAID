@@ -672,9 +672,9 @@ current_scale // current scale of the stack
     for (i in jso) {
       if (jso.hasOwnProperty(i)) {
         id = parseInt(jso[i].id, 10);
-        pos_x = phys2pixX(jso[i].x);
-        pos_y = phys2pixY(jso[i].y);
-        pos_z = phys2pixZ(jso[i].z);
+        pos_x = this.phys2pixX(jso[i].x);
+        pos_y = this.phys2pixY(jso[i].y);
+        pos_z = this.phys2pixZ(jso[i].z);
         zdiff = Math.floor(parseFloat(jso[i].z_diff) / resolution.z);
         if (zdiff === 0) {
           if (jso[i].type === "treenode") {
@@ -899,13 +899,13 @@ current_scale // current scale of the stack
   var r = Raphael(view, Math.floor(dimension.x * s), Math.floor(dimension.y * s));
   this.paper = r;
 
-  var phys2pixX = function (x) {
+  this.phys2pixX = function (x) {
     return (((x - translation.x) - project.coordinates.x) / resolution.x) * s + (view.offsetWidth / 2);
   };
-  var phys2pixY = function (y) {
+  this.phys2pixY = function (y) {
     return (((y - translation.y) - project.coordinates.y) / resolution.y) * s + (view.offsetHeight / 2);
   };
-  var phys2pixZ = function (z) {
+  this.phys2pixZ = function (z) {
     return (z - translation.z) / resolution.z;
   };
 
