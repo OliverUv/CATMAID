@@ -544,8 +544,7 @@ trakem2_project //!< boolean that states if a TrakEM2 project is available for t
         self.updateNodes();
       }
       // redraw the overlay
-      svgOverlay.redraw(
-      screen_left, screen_top, scale);
+      svgOverlay.redraw(scale);
     }
 
     // update crop box if available
@@ -1258,12 +1257,7 @@ trakem2_project //!< boolean that states if a TrakEM2 project is available for t
     viewHeight = height;
     viewWidth = width;
 
-    // resize svgOverlay
-    //svgOverlay.update(viewWidth, viewHeight);
-    view.style.left = left + "px";
-    view.style.top = top + "px";
-    view.style.width = viewWidth + "px";
-    view.style.height = viewHeight + "px";
+    svgOverlay.update(viewWidth, viewHeight);
 
     var rows = Math.floor(viewHeight / Y_TILE_SIZE) + 2;
     var cols = Math.floor(viewWidth / X_TILE_SIZE) + 2;

@@ -763,19 +763,13 @@ current_scale // current scale of the stack
     // console.log(nodes);
   };
 
-  var updateDimension = function () {
-    wi = Math.floor(dimension.x * s);
-    he = Math.floor(dimension.y * s);
-    // update width/height with the dimension from the database, which is in pixel unit
-    view.style.width = wi + "px";
-    view.style.height = he + "px";
-    // update the raphael canvas as well
-    r.setSize(wi, he);
-  };
+  this.update = function (newViewWidth,  newViewHeight) {
+    this.view.style.width = newViewWidth + "px";
+    this.view.style.height = newViewHeight + "px";
+    r.setSize(newViewWidth, newViewWidth);
+  }
 
   this.redraw = function (
-  pl, //!< float left-most coordinate of the parent DOM element in nanometer
-  pt, //!< float top-most coordinate of the parent DOM element in nanometer
   ns //!< scale factor to be applied to resolution [and fontsize]
   ) {
 
@@ -785,15 +779,6 @@ current_scale // current scale of the stack
     }
     // update the scale of the internal scale variable
     s = ns;
-    // pl/pt are in physical coordinates
-    view.style.left = Math.floor(-pl / resolution.x * s) + "px";
-    this.offleft = Math.floor(-pl / resolution.x * s);
-    view.style.top = Math.floor(-pt / resolution.y * s) + "px";
-    this.offtop = Math.floor(-pt / resolution.y * s);
-    updateDimension(s);
-    // do not want do updated node coordinates on
-    // every redraw
-    // updateNodeCoordinatesinDB();
   };
 
   this.set_tracing_mode = function (mode) {
@@ -826,11 +811,11 @@ current_scale // current scale of the stack
     // take into account current local offset coordinates and scale
     var pos_x = m.offsetX;
     var pos_y = m.offsetY;
-    var pos_z = phys2pixZ(project.coordinates.z);
+    var pos_z = this.phys2pixZ(project.coordinates.z);
 
     // get physical coordinates for node position creation
-    var phys_x = pix2physX(pos_x);
-    var phys_y = pix2physY(pos_y);
+    var phys_x = this.pix2physX(pos_x);
+    var phys_y = this.pix2physY(pos_y);
     var phys_z = project.coordinates.z;
 
     if (e.ctrlKey) {
@@ -896,10 +881,6 @@ current_scale // current scale of the stack
     return true;
   };
 
-  // offset of stack in physical coordinates
-  this.offleft = 0;
-  this.offtop = 0;
-
   // currently there are two modes: skeletontracing and synapsedropping
   var currentmode = "skeletontracing";
   this.set_tracing_mode(currentmode);
@@ -919,29 +900,23 @@ current_scale // current scale of the stack
   this.paper = r;
 
   var phys2pixX = function (x) {
-    return (x - translation.x) / resolution.x * s;
+    return (((x - translation.x) - project.coordinates.x) / resolution.x) * s + (view.offsetWidth / 2);
   };
   var phys2pixY = function (y) {
-    return (y - translation.y) / resolution.y * s;
+    return (((y - translation.y) - project.coordinates.y) / resolution.y) * s + (view.offsetHeight / 2);
   };
   var phys2pixZ = function (z) {
     return (z - translation.z) / resolution.z;
   };
 
-  var pix2physX = function (x) {
-    return translation.x + ((x) / s) * resolution.x;
-  };
-  var pix2physY = function (y) {
-    return translation.y + ((y) / s) * resolution.y;
-  };
   this.pix2physX = function (x) {
-    return translation.x + ((x) / s) * resolution.x;
+    return translation.x + project.coordinates.x + (x - (view.offsetWidth / 2)) * resolution.x / s;
   };
   this.pix2physY = function (y) {
-    return translation.y + ((y) / s) * resolution.y;
+    return translation.y + project.coordinates.y + (y - (view.offsetHeight / 2)) * resolution.y / s;
   };
   this.pix2physZ = function (z) {
-    return z * resolution.z + translation.z;
+    return translation.z + z * resolution.z;
   };
 
   this.show = function () {
