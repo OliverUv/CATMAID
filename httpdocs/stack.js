@@ -684,13 +684,8 @@ trakem2_project //!< boolean that states if a TrakEM2 project is available for t
       var m = ui.getMouse(e);
 
       if (m) {
-        // add right move of svgOverlay to the m.offsetX
-        offX = m.offsetX + svgOverlay.offleft;
-        // add down move of svgOverlay to the m.offsetY
-        offY = m.offsetY + svgOverlay.offtop;
-
-        var pos_x = translation.x + (x + (offX - viewWidth / 2) / scale) * resolution.x;
-        var pos_y = translation.x + (y + (offY - viewHeight / 2) / scale) * resolution.y;
+        var pos_x = svgOverlay.pix2physX(m.offsetX);
+        var pos_y = svgOverlay.pix2physY(m.offsetY);
         project.lastX = pos_x;
         project.lastY = pos_y;
         statusBar.replaceLast("[" + pos_x.toFixed(3) + ", " + pos_y.toFixed(3) + "]");
@@ -1049,7 +1044,7 @@ trakem2_project //!< boolean that states if a TrakEM2 project is available for t
       // but also for the svgoverlay, stops dragging node mdoe
       svgOverlay.view.onmousedown = onmousedown.trace;
       // XXX: coordinates are adjusted, either position or dragging but not both :(
-      // svgOverlay.view.onmousemove = onmousemove.trace;
+      svgOverlay.view.onmousemove = onmousemove.trace;
       try {
         svgOverlay.view.addEventListener("DOMMouseScroll", onmousewheel.zoom, false); /* Webkit takes the event but does not understand it ... */
         svgOverlay.view.addEventListener("mousewheel", onmousewheel.zoom, false);
