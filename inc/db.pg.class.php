@@ -187,8 +187,7 @@ class DB
 		//echo $queryStr, "<br />\n";
 		if( $this->debug )
 			error_log("In insertInto: ".preg_replace('/\s+/', ' ', $queryStr));
-		pg_query( $this->handle, $queryStr );
-		return;
+		return pg_query( $this->handle, $queryStr );
 	}
 	
 	/**
@@ -202,7 +201,9 @@ class DB
 	 */
 	function insertIntoId( $table, $values )
 	{
-		$this->insertInto( $table, $values );
+		if(!$this->insertInto( $table, $values )) {
+			return FALSE;
+		}
 		$id = $this->getResult( 'SELECT lastval() AS "id"' );
 		return $id[ 0 ][ 'id' ];
 	}
