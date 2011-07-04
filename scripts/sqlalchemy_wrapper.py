@@ -1,8 +1,8 @@
 from sqlalchemy import create_engine
-from sqlalchemy import Table, Colum, Integer, String, MetaData, ForeignKey
+from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey
 from sqlalchemy.orm import mapper
 
-engine = create_engine('postgresql+psycopg2://catmaid_user:catmaid_user_password@localhost/catmaid', echo=True)
+engine = create_engine('postgresql+psycopg2://catmaid_user:cmp@localhost/catmaid', echo=False)
 meta = MetaData()
 meta.reflect(bind=engine)
 
@@ -38,6 +38,7 @@ mapper(Stack, stack_table)
 
 class Treenode(object):
     def __init__(self):
+        pass
 
     def __repr__(self):
       return "<Treenode('%s')>" % (self.id)
