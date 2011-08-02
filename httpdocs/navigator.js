@@ -326,6 +326,81 @@ function Navigator()
 		}
 		return false
 	}
+
+    this.stringToKeyAction = {
+	"+": {
+	    helpText: "Zoom in",
+	    specialKeyCodes: [107, 61, 187],
+	    run: function (e) {
+		slider_s.move(1);
+		slider_trace_s.move(1);
+		return false;
+	    }
+	},
+	"-": {
+	    helpText: "Zoom out",
+	    specialKeyCodes: [109, 189, 45],
+	    run: function (e) {
+		slider_s.move(-1);
+		slider_trace_s.move(-1);
+		return false;
+	    }
+	},
+	",": {
+	    helpText: "Move up 1 slice in z (or 10 with Shift held)",
+	    specialKeyCodes: [188, 44],
+	    run: function (e) {
+		slider_z.move(-(e.shiftKey ? 10 : 1));
+		slider_trace_z.move(-(e.shiftKey ? 10 : 1));
+		return false;
+	    }
+	},
+	".": {
+	    helpText: "Move down 1 slice in z (or 10 with Shift held)",
+	    specialKeyCodes: [190, 46],
+	    run: function (e) {
+		slider_z.move((e.shiftKey ? 10 : 1));
+		slider_trace_z.move((e.shiftKey ? 10 : 1));
+		return false;
+	    }
+	},
+	"\u2190": {
+	    helpText: "Move left (towards negative x)",
+	    specialKeyCodes: [arrowKeyCodes.left],
+	    run: function (e) {
+		input_x.value = parseInt(input_x.value, 10) - (e.shiftKey ? 100 : (e.altKey ? 1 : 10));
+		input_x.onchange(e);
+		return false;
+	    }
+	},
+	"\u2192": {
+	    helpText: "Move right (towards positive x)",
+	    specialKeyCodes: [arrowKeyCodes.right],
+	    run: function (e) {
+		input_x.value = parseInt(input_x.value, 10) + (e.shiftKey ? 100 : (e.altKey ? 1 : 10));
+		input_x.onchange(e);
+		return false;
+	    }
+	},
+	"\u2191": {
+	    helpText: "Move up (towards negative y)",
+	    specialKeyCodes: [arrowKeyCodes.up],
+	    run: function (e) {
+		input_y.value = parseInt(input_y.value, 10) - (e.shiftKey ? 100 : (e.altKey ? 1 : 10));
+		input_y.onchange(e);
+		return false;
+	    }
+	},
+	"\u2193": {
+	    helpText: "Move down (towards positive y)",
+	    specialKeyCodes: [arrowKeyCodes.down],
+	    run: function (e) {
+		input_y.value = parseInt(input_y.value, 10) + (e.shiftKey ? 100 : (e.altKey ? 1 : 10));
+		input_y.onchange(e);
+		return false;
+	    }
+	},
+    };
 	
 	/**
 	 * install this tool in a stack.
