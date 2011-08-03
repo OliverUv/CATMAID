@@ -33,6 +33,10 @@ function Action (properties) {
 	return keyShortcuts
     }
 
+    this.getButtonIDs = function( ) {
+	return buttonIDs;
+    }
+
     /**
        Add an array of button IDs, for example:
          action.addButtonIDs(['trace_button_togglelabels')
@@ -93,4 +97,27 @@ var getKeyCodeToActionMap = function( actionArray ) {
 	}
     }
     return keyCodeToKeyAction;
+}
+
+/** Updates the 'alt' and 'title' attributes on the toolbar
+    icons that are documented with help text and key presses.
+    Also bind the onClick action for the link that contains
+    those icons to the corresponding function */
+
+function setButtonClicksFromActions(actions) {
+    var i, j, buttonIDs, buttonID;
+    for (i = 0; i < actions.length; ++i) {
+	action = actions[i];
+	buttonIDs = actions.getButtonIDs();
+	for(j = 0; j < buttonIDs.length; ++j ) {
+	    buttonID = buttonIDs[j];
+	    var link = $('#' + buttonID);
+	    link.attr('href', 'foo');
+	    link.click(o.run);
+	    var img = link.find('img');
+	    img.attr('alt', o.helpText);
+	    var title = i + ': ' + o.helpText;
+	    img.attr('title', title);
+	}
+    }
 }

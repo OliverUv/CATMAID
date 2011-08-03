@@ -19,204 +19,6 @@
      http://unixpapa.com/js/key.html
  */
 
-var arrowKeyCodes = {
-  left: 37,
-  up: 38,
-  right: 39,
-  down: 40
-};
-
-var stringToKeyAction = {
-  "A": {
-    helpText: "Go to active node",
-    buttonID: 'trace_button_goactive',
-    run: function (e) {
-      project.tracingCommand('goactive');
-      return false;
-    }
-  },
-  "J": {
-    helpText: "Nothing right now",
-    run: function (e) {
-      alert("J was pressed");
-      return false;
-    }
-  },
-  "+": {
-    helpText: "Zoom in",
-    specialKeyCodes: [107, 61, 187],
-    run: function (e) {
-      slider_s.move(1);
-      slider_trace_s.move(1);
-      return false;
-    }
-  },
-  "-": {
-    helpText: "Zoom out",
-    specialKeyCodes: [109, 189, 45],
-    run: function (e) {
-      slider_s.move(-1);
-      slider_trace_s.move(-1);
-      return false;
-    }
-  },
-  ",": {
-    helpText: "Move up 1 slice in z (or 10 with Shift held)",
-    specialKeyCodes: [188, 44],
-    run: function (e) {
-      slider_z.move(-(e.shiftKey ? 10 : 1));
-      slider_trace_z.move(-(e.shiftKey ? 10 : 1));
-      return false;
-    }
-  },
-  ".": {
-    helpText: "Move down 1 slice in z (or 10 with Shift held)",
-    specialKeyCodes: [190, 46],
-    run: function (e) {
-      slider_z.move((e.shiftKey ? 10 : 1));
-      slider_trace_z.move((e.shiftKey ? 10 : 1));
-      return false;
-    }
-  },
-  "\u2190": {
-    helpText: "Move left (towards negative x)",
-    specialKeyCodes: [arrowKeyCodes.left],
-    run: function (e) {
-      input_x.value = parseInt(input_x.value, 10) - (e.shiftKey ? 100 : (e.altKey ? 1 : 10));
-      input_x.onchange(e);
-      return false;
-    }
-  },
-  "\u2192": {
-    helpText: "Move right (towards positive x)",
-    specialKeyCodes: [arrowKeyCodes.right],
-    run: function (e) {
-      input_x.value = parseInt(input_x.value, 10) + (e.shiftKey ? 100 : (e.altKey ? 1 : 10));
-      input_x.onchange(e);
-      return false;
-    }
-  },
-  "\u2191": {
-    helpText: "Move up (towards negative y)",
-    specialKeyCodes: [arrowKeyCodes.up],
-    run: function (e) {
-      input_y.value = parseInt(input_y.value, 10) - (e.shiftKey ? 100 : (e.altKey ? 1 : 10));
-      input_y.onchange(e);
-      return false;
-    }
-  },
-  "\u2193": {
-    helpText: "Move down (towards positive y)",
-    specialKeyCodes: [arrowKeyCodes.down],
-    run: function (e) {
-      input_y.value = parseInt(input_y.value, 10) + (e.shiftKey ? 100 : (e.altKey ? 1 : 10));
-      input_y.onchange(e);
-      return false;
-    }
-  },
-  "M": {
-    helpText: "Deselect the active node",
-    run: function (e) {
-      activateNode(null);
-      return false;
-    }
-  },
-  "P": {
-    helpText: "Go to the parent of the active node (?)",
-    run: function (e) {
-      project.tracingCommand('goparent');
-      return false;
-    }
-  },
-  "E": {
-    helpText: "Go to last edited node in this skeleton",
-    run: function (e) {
-      project.tracingCommand('golastedited');
-      return false;
-    }
-  },
-  "5": {
-    helpText: "Split this skeleton at the active node",
-    buttonID: 'trace_button_skelsplitting',
-    run: function (e) {
-      project.tracingCommand('skeletonsplitting');
-      return false;
-    }
-  },
-  "6": {
-    helpText: "Re-root this skeleton at the active node",
-    buttonID: 'trace_button_skelrerooting',
-    run: function (e) {
-      project.tracingCommand('skeletonreroot');
-      return false;
-    }
-  },
-  "7": {
-    helpText: "Toggle the display of labels",
-    buttonID: 'trace_button_togglelabels',
-    run: function (e) {
-      project.tracingCommand('togglelabels');
-      return false;
-    }
-  },
-  "S": {
-    helpText: "Export to SWC",
-    buttonID: 'trace_button_exportswc',
-    run: function (e) {
-      project.tracingCommand('exportswc');
-      return false;
-    }
-  },
-  "T": {
-    helpText: "Tag the active node",
-    run: function (e) {
-      if (!(e.ctrlKey || e.metaKey)) {
-        project.tracingCommand('tagging');
-      }
-      return true;
-    }
-  },
-  "G": {
-    helpText: "Select the nearest node to the mouse cursor",
-    run: function (e) {
-      if (!(e.ctrlKey || e.metaKey)) {
-        project.activateNearestNode();
-      }
-      return true;
-    }
-  },
-};
-
-/*
-
-var withAliases = jQuery.extend({}, stringToKeyAction);
-withAliases["4"] = withAliases["A"];
-
-/* We now turn that structure into an object for
-   fast lookups from keyCodes */
-
-
-/** Updates the 'alt' and 'title' attributes on the toolbar
- icons that are documented with help text and key presses.
- Also bind the onClick action for the link that contains
- those icons to the corresponding function */
-
-function setButtons() {
-  for (var i in stringToKeyAction) {
-    var o = stringToKeyAction[i];
-    if (o.buttonID) {
-      var link = $('#' + o.buttonID);
-      link.attr('href', 'foo');
-      link.click(o.run);
-      var img = link.find('img');
-      img.attr('alt', o.helpText);
-      var title = i + ': ' + o.helpText;
-      img.attr('title', title);
-    }
-  }
-}
-
-
 /**
  * A TrakEM2 Web project.
  *
@@ -550,7 +352,20 @@ function Project( pid )
 			} );
 		return;
 	}
-	
+
+    /** This function should return true if there was any action
+        linked to the key code, or false otherwise. */
+
+    var handleKeyPress = function( e ) {
+        keyAction = self.keyCodeToAction[key];
+        if (keyAction) {
+	    keyAction.run(e || event);
+	    return true;
+	} else {
+            return false;
+	}
+    }
+
 	var onkeydown = function( e )
 	{
 		var key;
@@ -585,9 +400,12 @@ function Project( pid )
 	    }
 	    if (!(fromATextField || n == "textarea" || n == "area")) //!< @todo exclude all useful keyboard input elements e.g. contenteditable...
 	    {
-		keyAction = self.keyCodeToAction[key];
-		if (keyAction) return keyAction.run(e || event);
-		return true;
+		console.log("tool is:",tool);
+		if (tool && tool.handleKeyPress(e || event)) {
+		    return true;
+		} else {
+		    return handleKeyPress(e || event);
+		}
 	    } else
 		return true;
 	}
@@ -641,7 +459,10 @@ function Project( pid )
 	return actions;
     }
 
-    // FIXME: also add F1 to open the key shortcuts help?
+    /** FIXME: also add F1 to open the key shortcuts help?
+
+        FIXME: 1 is a bad shortcut to switch tool (1-5 should be used
+        for setting confidences instead) */
 
     this.addAction( new Action({
 	helpText: "Switch to skeleton tracing mode",
@@ -672,5 +493,7 @@ function Project( pid )
     }) );
 
     this.keyCodeToAction = getKeyCodeToActionMap(actions);
+
+    setButtonClicksFromActions(actions);
 
 }
