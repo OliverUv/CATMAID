@@ -178,31 +178,46 @@ def lines_delete(request, project_id=None, logged_in_user=None):
                                         kwargs={'neuron_id':neuron.id,
                                                 'project_id':p.id}))
 
+import h5py
+import os
+
 @catmaid_login_required
 def skeleton_neurohdf(request, project_id=None, skeleton_id=None, logged_in_user=None):
 
-    import tempfile
-
-    temp = tempfile.TemporaryFile()
-    try:
-        print 'temp:', temp
-        print 'temp.name:', temp.name
-    finally:
-        # Automatically cleans up the file
-        temp.close()
-
-    result = "123"
-    #import h5py
-    #a = h5py.File('test.h5', mode='a', driver='core', backing_store=False)
-    #a.create_group("aha")
-    #a.close()
+#    import tempfile
+#
+#    temp = tempfile.TemporaryFile()
+#    try:
+#        print 'temp:', temp
+#        print 'temp.name:', temp.name
+#    finally:
+#        # Automatically cleans up the file
+#        temp.close()
+#
+#    result = "123"
 
     # https://docs.djangoproject.com/en/dev/howto/outputting-pdf/
     # https://docs.djangoproject.com/en/dev/ref/files/storage/
     # https://docs.djangoproject.com/en/dev/topics/files/
-    
-    result = HttpResponse(result, mimetype="data/x-streamed-hdf5")
-    result['Content-Disposition'] = 'attachment; filename=foo.h5'
+
+    filename = "test.h5"
+    fpath = '/tmp/' + filename
+
+    neurohdfile = h5py.File(fpath, mode='a')
+
+    # TODO: extract microcircuit, i.e. skeleton with connectivity
+    # consumable by other libraries
+
+    neurohdfile.create_group("aha")
+    neurohdfile.close()
+
+    result = HttpResponse(mimetype="data/x-streamed-hdf5")
+    result['Content-Disposition'] = 'attachment; filename='+filename
+    # Write it to result filelike object
+    result.write(open(fpath, 'rb').read())
+    # Remove again from local filesystem
+    os.remove(fname)
+
     return result
 
 @catmaid_login_required
