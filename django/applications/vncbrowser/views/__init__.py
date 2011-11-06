@@ -13,6 +13,7 @@ from views import set_cell_body
 from views import lines_add
 from views import line
 from views import lines_delete
+from views import skeleton_neurohdf
 from views import skeleton_swc
 from views import neuron_to_skeletons
 

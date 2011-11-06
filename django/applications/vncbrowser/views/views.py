@@ -179,6 +179,33 @@ def lines_delete(request, project_id=None, logged_in_user=None):
                                                 'project_id':p.id}))
 
 @catmaid_login_required
+def skeleton_neurohdf(request, project_id=None, skeleton_id=None, logged_in_user=None):
+
+    import tempfile
+
+    temp = tempfile.TemporaryFile()
+    try:
+        print 'temp:', temp
+        print 'temp.name:', temp.name
+    finally:
+        # Automatically cleans up the file
+        temp.close()
+
+    result = "123"
+    #import h5py
+    #a = h5py.File('test.h5', mode='a', driver='core', backing_store=False)
+    #a.create_group("aha")
+    #a.close()
+
+    # https://docs.djangoproject.com/en/dev/howto/outputting-pdf/
+    # https://docs.djangoproject.com/en/dev/ref/files/storage/
+    # https://docs.djangoproject.com/en/dev/topics/files/
+    
+    result = HttpResponse(result, mimetype="data/x-streamed-hdf5")
+    result['Content-Disposition'] = 'attachment; filename=foo.h5'
+    return result
+
+@catmaid_login_required
 def skeleton_swc(request, project_id=None, skeleton_id=None, treenode_id=None, logged_in_user=None):
     if treenode_id and not skeleton_id:
         ci = ClassInstance.objects.get(
