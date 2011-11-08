@@ -5,7 +5,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from vncbrowser.models import CELL_BODY_CHOICES, \
     ClassInstanceClassInstance, Relation, Class, ClassInstance, \
-    Project, User, Treenode
+    Project, User, Treenode, Connector
 from vncbrowser.views import catmaid_login_required, my_render_to_response, \
     get_form_and_neurons
 import json
@@ -178,35 +178,142 @@ def lines_delete(request, project_id=None, logged_in_user=None):
                                         kwargs={'neuron_id':neuron.id,
                                                 'project_id':p.id}))
 
-import h5py
+#ximport h5py
 import os
+import numpy as np
 
-@catmaid_login_required
 def skeleton_neurohdf(request, project_id=None, skeleton_id=None, logged_in_user=None):
+    # retrieve all treenodes for a given skeleton
+    qs = Treenode.objects.filter(
+        treenodeclassinstance__class_instance__id=skeleton_id,
+        treenodeclassinstance__relation__relation_name='element_of',
+        treenodeclassinstance__class_instance__class_column__class_name='skeleton',
+        project=project_id).order_by('id')
 
-#    import tempfile
-#
-#    temp = tempfile.TemporaryFile()
-#    try:
-#        print 'temp:', temp
-#        print 'temp.name:', temp.name
-#    finally:
-#        # Automatically cleans up the file
-#        temp.close()
-#
-#    result = "123"
+    treenode_count = qs.count()
+    treenode_xyz = np.zeros( (treenode_count, 3), dtype = np.float32 )
+    treenode_parentid = np.zeros( (treenode_count,), dtype = np.uint32 )
+    # treenode_skeletonid =  np.zeros( (treenode_count, 1), dtype = np.uint32 )
+    treenode_id = np.zeros( (treenode_count,), dtype = np.uint32 )
+    treenode_radius = np.zeros( (treenode_count,), dtype = np.uint32 )
+    treenode_confidence = np.zeros( (treenode_count,), dtype = np.uint32 )
+    treenode_userid = np.zeros( (treenode_count,), dtype = np.uint32 )
+    map_treenode_id2idx = dict()
+    for i,tn in enumerate(qs):
+        treenode_xyz[i,0] = tn.location.x
+        treenode_xyz[i,1] = tn.location.y
+        treenode_xyz[i,2] = tn.location.z
+        if not tn.parent_id is None:
+            treenode_parentid[i] = tn.parent_id
+        else:
+            parentrow = i
+
+        treenode_id[i] = tn.id
+        treenode_radius[i] = tn.radius
+        treenode_confidence[i] = tn.confidence
+        treenode_userid[i] = tn.user_id
+
+        map_treenode_id2idx[tn.id] = i
+
+    # Get index-based connectivity
+    treenode_connectivity = np.zeros( (treenode_count-1, 2), dtype = np.uint32 )
+
+    row_count = 0
+    for i in range(treenode_count):
+        if i == parentrow:
+            continue
+        treenode_connectivity[row_count,0] = map_treenode_id2idx[treenode_id[i]]
+        treenode_connectivity[row_count,1] = map_treenode_id2idx[treenode_parentid[i]]
+        row_count += 1
+
+    # presynaptic treenodes
+    qs = Treenode.objects.filter(
+        treenodeclassinstance__class_instance__id=skeleton_id,
+        treenodeclassinstance__relation__relation_name='element_of',
+        treenodeclassinstance__class_instance__class_column__class_name='skeleton',
+        project=project_id,
+        treenodeconnector__relation__relation_name='presynaptic_to'
+    )
+    treenode_connectivity_id = [] # np.zeros( (qs.count(), 2), dtype = np.uint32 )
+    cn_type = []
+    cn_xyz = []; cn_id = []; cn_confidence = []
+    for tn in qs:
+        print "preszynapti treenode", tn.id
+        # TODO: retrieve connector node with location and id etc.
+        cqs = Connector.objects.filter(
+            project=project_id,
+            treenodeconnector__relation__relation_name='presynaptic_to',
+            treenodeconnector__treenode__id = tn.id
+        )
+        for cn in cqs:
+            treenode_connectivity_id.append( [tn.id, cn.id] )
+            # also need other connector node information
+            cn_xyz.append( [cn.location.x, cn.location.y, cn.location.z] )
+            cn_id.append( cn.id )
+            cn_confidence.append( cn.confidence )
+            cn_type.append( 1 ) # FIXME: presynaptic type id
+            
+
+    # postsynaptic treenodes
+    qs = Treenode.objects.filter(
+        treenodeclassinstance__class_instance__id=skeleton_id,
+        treenodeclassinstance__relation__relation_name='element_of',
+        treenodeclassinstance__class_instance__class_column__class_name='skeleton',
+        project=project_id,
+        treenodeconnector__relation__relation_name='postsynaptic_to'
+    )
+    for tn in qs:
+        print "postsyn treenode", tn.id
+        cqs = Connector.objects.filter(
+            project=project_id,
+            treenodeconnector__relation__relation_name='postsynaptic_to',
+            treenodeconnector__treenode__id = tn.id
+        )
+        for cn in cqs:
+            treenode_connectivity_id.append( [tn.id, cn.id] )
+            # also need other connector node information
+            cn_xyz.append( [cn.location.x, cn.location.y, cn.location.z] )
+            cn_id.append( cn.id )
+            cn_confidence.append( cn.confidence )
+            cn_type.append( 2 ) # FIXME: presynaptic type id
+
+    print np.array( treenode_connectivity_id ), cn_xyz, cn_id, cn_confidence, cn_type
+
+    from StringIO import StringIO
+    inmemory = StringIO()
+
+    np.save(inmemory, treenode_connectivity)
+    inmemory.seek(0)
+
+    result = HttpResponse(mimetype="data/numpy")
+    result['Content-Disposition'] = 'attachment; filename=xyz.npy'
+    result.write(inmemory.read())
+
+    #return HttpResponse(result, mimetype="text/plain")
+    return result
+    
+@catmaid_login_required
+def skeleton_neurohdf2(request, project_id=None, skeleton_id=None, logged_in_user=None):
+    """ Generate the NeuroHDF on the local file system with a long hash
+    that is sent back to the user and which can be used (not-logged in) to
+    retrieve the file
+    """
+
+    import tempfile
 
     # https://docs.djangoproject.com/en/dev/howto/outputting-pdf/
     # https://docs.djangoproject.com/en/dev/ref/files/storage/
     # https://docs.djangoproject.com/en/dev/topics/files/
 
-    filename = "test.h5"
-    fpath = '/tmp/' + filename
-
-    neurohdfile = h5py.File(fpath, mode='a')
+    # filename = "test.h5"
+    #fpath = '/tmp/' + filename
+    fpath = tempfile.mktemp(suffix='.h5')
+    filename = os.path.split(fpath)[1]
+    neurohdfile = h5py.File(fpath, mode='w')
 
     # TODO: extract microcircuit, i.e. skeleton with connectivity
     # consumable by other libraries
+
 
     neurohdfile.create_group("aha")
     neurohdfile.close()
@@ -216,7 +323,7 @@ def skeleton_neurohdf(request, project_id=None, skeleton_id=None, logged_in_user
     # Write it to result filelike object
     result.write(open(fpath, 'rb').read())
     # Remove again from local filesystem
-    os.remove(fname)
+    os.remove(fpath)
 
     return result
 
