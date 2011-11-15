@@ -317,42 +317,66 @@ def skeleton_neurohdf(request, project_id=None, skeleton_id=None, logged_in_user
         conn = vert.create_group("connectivity")
         connproperties = conn.create_group("properties")
 
-        vert.create_dataset("id", data=np.hstack((treenode_id.T, np.array(cn_id, dtype=np.uint32))))
-        vertproperties.create_dataset("location", data=np.vstack((treenode_xyz, np.array(cn_xyz, dtype=np.uint32))))
-        vertproperties.create_dataset("type", data=np.hstack((treenode_type.T, np.array(cn_type, dtype=np.uint32))))
-        vertproperties.create_dataset("confidence", data=np.hstack((treenode_confidence.T, np.array(cn_confidence, dtype=np.uint32))))
-        vertproperties.create_dataset("userid", data=np.hstack((treenode_userid.T, np.array(cn_userid, dtype=np.uint32))))
-        vertproperties.create_dataset("radius", data=np.hstack((treenode_radius.T, np.array(cn_radius, dtype=np.uint32))))
+        vert.create_dataset("id", data=data['vert']['id'])
+        vertproperties.create_dataset("location", data=data['vertprop']['location'])
+        vertproperties.create_dataset("type", data=data['vertprop']['type'])
+        vertproperties.create_dataset("confidence", data=data['vertprop']['confidence'])
+        vertproperties.create_dataset("userid", data=data['vertprop']['userid'])
+        vertproperties.create_dataset("radius", data=data['vertprop']['radius'])
+
+        conn.create_dataset("id", data=data['conn']['id'])
+        connproperties.create_dataset("type", data=data['connprop']['type'])
         
-        conn.create_dataset("id", data=np.vstack((treenode_connectivity, np.array(treenode_connector_connectivity, dtype=np.uint32))))
-        connproperties.create_dataset("type", data=np.hstack((treenode_connectivity_type.T, np.array(treenode_connector_connectivity_type, dtype=np.uint32))))
         # TODO: add metadata fields!
         # connproperties["type"].attrs["content_value_1_name"] = "presynaptic"
         # content_type = "categorial
         # content_value = [0, 1, 2, 3]
         # content_name = ["blab", "blubb", ...]
 
-    return neurohdf_filename
-
-
-@catmaid_login_required
-def skeleton_neurohdf(request, project_id=None, skeleton_id=None, logged_in_user=None):
-    """ Generate the NeuroHDF on the local file system with a long hash
-    that is sent back to the user and which can be used (not-logged in) to
-    retrieve the file from the not-listed static folder
-    """
-    neurohdf_filename=get_skeleton_as_neurohdf(project_id, skeleton_id)
     return HttpResponse(neurohdf_filename, mimetype="text/plain")
 
 @catmaid_login_required
-def groupnode_neurohdf(request, project_id=None, group_id=None, logged_in_user=None):
+def groupnode_skeleton(request, project_id=None, group_id=None, logged_in_user=None):
     """ Generate a NeuroHDF file with the microcircuit using all skeleton leaf-nodes
     starting from a given group id of the annotation domain.
     """
-    pass
-    # TODO: fetch all skeleton ids and retrieve arrays and merge into one hdf5 with
-    # optimization not duplicating connector nodes. special treatment for retrieving everything
-    # setting skeleton_id as connectivity property to group
+    skeleton_list = []
+    qs = ClassInstance.objects.filter(
+        project=project_id,
+        cici_via_a__relation__relation_name__in=['part_of','model_of'],
+        cici_via_a__class_instance_b=group_id)
+    next_nodes = [(ele.id, ele.class_column.class_name) for ele in qs]
+    print >> sys.stderr, next_nodes
+    while len(next_nodes) > 0:
+        next_nodes2 = []
+        for id, class_name in next_nodes:
+            # print >> sys.stderr, "id, name", id, class_name
+            if class_name == "neuron":
+                newqs = ClassInstance.objects.filter(
+                    project=project_id,
+                    cici_via_a__relation__relation_name='model_of',
+                    cici_via_a__class_instance_b=id)
+                skeleton_list.extend( [ele.id for ele in newqs] )
+            elif class_name == "skeleton":
+                skeleton_list.append( id )
+            else:
+                newqs = ClassInstance.objects.filter(
+                    project=project_id,
+                    cici_via_a__relation__relation_name='part_of',
+                    cici_via_a__class_instance_b=id)
+                next_nodes2.extend( [(ele.id, ele.class_column.class_name) for ele in newqs] )
+        next_nodes = next_nodes2
+
+    for skeleton_id in skeleton_list:
+        data = get_skeleton_as_neurohdf(project_id, skeleton_id)
+        print >> sys.stderr, data
+        # TODO: bigger datastructure
+        # TODO: store to HDF5
+        # setting skeleton_id as connectivity property to group
+        
+    return HttpResponse("OK", mimetype="text/plain")
+
+
 
 @catmaid_login_required
 def skeleton_swc(request, project_id=None, skeleton_id=None, treenode_id=None, logged_in_user=None):

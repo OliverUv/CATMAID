@@ -16,6 +16,7 @@ from views import lines_delete
 from views import skeleton_neurohdf
 from views import skeleton_swc
 from views import neuron_to_skeletons
+from views import groupnode_skeleton
 
 from catmaid_replacements import projects
 from catmaid_replacements import labels_all
