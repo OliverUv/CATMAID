@@ -240,12 +240,14 @@ def get_skeleton_as_neurohdf(project_id=None, skeleton_id=None):
 
     treenode_connector_connectivity=[]; treenode_connector_connectivity_type=[]
     cn_type=[]; cn_xyz=[]; cn_id=[]; cn_confidence=[]; cn_userid=[]; cn_radius=[]
-
+    found_synapse=False
     for tc in qs_tc:
         if tc.relation.relation_name == 'presynaptic_to':
             treenode_connector_connectivity_type.append( 2 ) # TODO: presynaptic type id
+            found_synapse=True
         elif tc.relation.relation_name == 'postsynaptic_to':
             treenode_connector_connectivity_type.append( 3 ) # TODO: presynaptic type id
+            found_synapse=True
         else:
             print >> std.err, "non-synaptic relation found: ", tc.relation.relation_name
             continue
@@ -258,10 +260,54 @@ def get_skeleton_as_neurohdf(project_id=None, skeleton_id=None):
         cn_radius.append( 0 ) # default because no radius for connector
         cn_type.append( 2 ) # TODO: connector node
 
+    data = {'vert':None,'vertprop':None,'conn':None,'connprop':None}
+    data['vert'] = {
+        'id': np.hstack((treenode_id.T, np.array(cn_id, dtype=np.uint32)))
+    }
+    # check if we have synaptic connectivity at all
+    if found_synapse:
+        data['vertprop'] = {
+            'location': np.vstack((treenode_xyz, np.array(cn_xyz, dtype=np.uint32))),
+            'type': np.hstack((treenode_type.T, np.array(cn_type, dtype=np.uint32))),
+            'confidence': np.hstack((treenode_confidence.T, np.array(cn_confidence, dtype=np.uint32))),
+            'userid': np.hstack((treenode_userid.T, np.array(cn_userid, dtype=np.uint32))),
+            'radius': np.hstack((treenode_radius.T, np.array(cn_radius, dtype=np.uint32)))
+        }
+        data['conn'] = {
+            'id': np.vstack((treenode_connectivity, np.array(treenode_connector_connectivity, dtype=np.uint32)))
+        }
+        data['connprop'] = {
+            'type': np.hstack((treenode_connectivity_type.T, np.array(treenode_connector_connectivity_type, dtype=np.uint32)))
+        }
+    else:
+        data['vertprop'] = {
+            'location': treenode_xyz,
+            'type': treenode_type.T,
+            'confidence': treenode_confidence.T,
+            'userid': treenode_userid.T,
+            'radius': treenode_radius.T
+        }
+        data['conn'] = {
+            'id': None
+        }
+        data['connprop'] = {
+            'type': None
+        }
+    return data
+
+
+@catmaid_login_required
+def skeleton_neurohdf(request, project_id=None, skeleton_id=None, logged_in_user=None):
+    """ Generate the NeuroHDF on the local file system with a long hash
+    that is sent back to the user and which can be used (not-logged in) to
+    retrieve the file from the not-listed static folder
+    """
+    data = get_skeleton_as_neurohdf(project_id, skeleton_id)
+
     # concatenate treenode and treenode_connector information and store all into neurohdf
     fname = ''.join([choice('abcdefghijklmnopqrstuvwxyz0123456789(-_=+)') for i in range(50)])
 
-    # TODO: should be a static path
+    # TODO: should be on the static path
     neurohdf_filename = '/tmp/%s.h5' % fname
 
     with closing(h5py.File(neurohdf_filename, 'a')) as hfile:
