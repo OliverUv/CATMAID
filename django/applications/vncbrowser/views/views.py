@@ -198,7 +198,7 @@ def get_skeleton_as_neurohdf(project_id=None, skeleton_id=None):
     treenode_xyz = np.zeros( (treenode_count, 3), dtype = np.float32 )
     treenode_parentid = np.zeros( (treenode_count,), dtype = np.uint32 )
     treenode_id = np.zeros( (treenode_count,), dtype = np.uint32 )
-    treenode_radius = np.zeros( (treenode_count,), dtype = np.uint32 )
+    treenode_radius = np.zeros( (treenode_count,), dtype = np.int32 )
     treenode_confidence = np.zeros( (treenode_count,), dtype = np.uint32 )
     treenode_userid = np.zeros( (treenode_count,), dtype = np.uint32 )
     treenode_type = np.zeros( (treenode_count,), dtype = np.uint32 )
@@ -219,12 +219,12 @@ def get_skeleton_as_neurohdf(project_id=None, skeleton_id=None):
 
     # Get id-based connectivity
     treenode_connectivity = np.zeros( (treenode_count-1, 2), dtype = np.uint32 )
-    treenode_connectivity_type = np.zeros( (treenode_count,), dtype = np.uint32 )
+    treenode_connectivity_type = np.zeros( (treenode_count-1,), dtype = np.uint32 )
     row_count = 0
     for i in range(treenode_count):
-        treenode_connectivity_type[i] = 1 # TODO: neurite
         if i == parentrow:
             continue
+        treenode_connectivity_type[row_count] = 1 # TODO: neurite
         treenode_connectivity[row_count,0] = treenode_id[i]
         treenode_connectivity[row_count,1] = treenode_parentid[i]
         row_count += 1
@@ -260,41 +260,70 @@ def get_skeleton_as_neurohdf(project_id=None, skeleton_id=None):
         cn_radius.append( 0 ) # default because no radius for connector
         cn_type.append( 2 ) # TODO: connector node
 
-    data = {'vert':None,'vertprop':None,'conn':None,'connprop':None}
-    data['vert'] = {
-        'id': np.hstack((treenode_id.T, np.array(cn_id, dtype=np.uint32)))
-    }
+    data = {'vert':{},'conn':{}}
     # check if we have synaptic connectivity at all
     if found_synapse:
-        data['vertprop'] = {
+        data['vert'] = {
+            'id': np.hstack((treenode_id.T, np.array(cn_id, dtype=np.uint32))),
             'location': np.vstack((treenode_xyz, np.array(cn_xyz, dtype=np.uint32))),
-            'type': np.hstack((treenode_type.T, np.array(cn_type, dtype=np.uint32))),
-            'confidence': np.hstack((treenode_confidence.T, np.array(cn_confidence, dtype=np.uint32))),
-            'userid': np.hstack((treenode_userid.T, np.array(cn_userid, dtype=np.uint32))),
-            'radius': np.hstack((treenode_radius.T, np.array(cn_radius, dtype=np.uint32)))
+            'type': np.hstack((treenode_type, np.array(cn_type, dtype=np.uint32).ravel() )),
+            'confidence': np.hstack((treenode_confidence, np.array(cn_confidence, dtype=np.uint32).ravel() )),
+            'userid': np.hstack((treenode_userid, np.array(cn_userid, dtype=np.uint32).ravel() )),
+            'radius': np.hstack((treenode_radius, np.array(cn_radius, dtype=np.int32).ravel() ))
         }
         data['conn'] = {
-            'id': np.vstack((treenode_connectivity, np.array(treenode_connector_connectivity, dtype=np.uint32)))
-        }
-        data['connprop'] = {
-            'type': np.hstack((treenode_connectivity_type.T, np.array(treenode_connector_connectivity_type, dtype=np.uint32)))
+            'id': np.vstack((treenode_connectivity, np.array(treenode_connector_connectivity, dtype=np.uint32)) ),
+            'type': np.hstack((treenode_connectivity_type,
+                               np.array(treenode_connector_connectivity_type, dtype=np.uint32).ravel() ))
         }
     else:
-        data['vertprop'] = {
+        data['vert'] = {
+            'id': treenode_id,
             'location': treenode_xyz,
-            'type': treenode_type.T,
-            'confidence': treenode_confidence.T,
-            'userid': treenode_userid.T,
-            'radius': treenode_radius.T
+            'type': treenode_type,
+            'confidence': treenode_confidence,
+            'userid': treenode_userid,
+            'radius': treenode_radius
         }
         data['conn'] = {
-            'id': None
+            'id': treenode_connectivity,
+            'type': treenode_connectivity_type
         }
-        data['connprop'] = {
-            'type': None
-        }
+        # no connprop type
     return data
 
+
+def get_temporary_neurohdf_filename():
+    fname = ''.join([choice('abcdefghijklmnopqrstuvwxyz0123456789(-_=+)') for i in range(50)])
+    # TODO: should be on the static path
+    return '/tmp/%s.h5' % fname
+
+def create_neurohdf_file(filename, data):
+
+    with closing(h5py.File(filename, 'a')) as hfile:
+        mcgroup = hfile.create_group("Microcircuit")
+        vert = mcgroup.create_group("vertices")
+        conn = mcgroup.create_group("connectivity")
+
+        vert.create_dataset("id", data=data['vert']['id'])
+        vert.create_dataset("location", data=data['vert']['location'])
+        vert.create_dataset("type", data=data['vert']['type'])
+        vert.create_dataset("confidence", data=data['vert']['confidence'])
+        vert.create_dataset("userid", data=data['vert']['userid'])
+        vert.create_dataset("radius", data=data['vert']['radius'])
+
+        conn.create_dataset("id", data=data['conn']['id'])
+        if data['conn'].has_key('type'):
+            conn.create_dataset("type", data=data['conn']['type'])
+        if data['conn'].has_key('skeletonid'):
+            conn.create_dataset("skeletonid", data=data['conn']['skeletonid'])
+
+        # TODO: add metadata fields!
+        # connproperties["type"].attrs["content_value_1_name"] = "presynaptic"
+        # content_type = "categorial
+        # content_value = [0, 1, 2, 3]
+        # content_name = ["blab", "blubb", ...]
+        
 
 @catmaid_login_required
 def skeleton_neurohdf(request, project_id=None, skeleton_id=None, logged_in_user=None):
@@ -302,37 +331,9 @@ def skeleton_neurohdf(request, project_id=None, skeleton_id=None, logged_in_user
     that is sent back to the user and which can be used (not-logged in) to
     retrieve the file from the not-listed static folder
     """
-    data = get_skeleton_as_neurohdf(project_id, skeleton_id)
-
-    # concatenate treenode and treenode_connector information and store all into neurohdf
-    fname = ''.join([choice('abcdefghijklmnopqrstuvwxyz0123456789(-_=+)') for i in range(50)])
-
-    # TODO: should be on the static path
-    neurohdf_filename = '/tmp/%s.h5' % fname
-
-    with closing(h5py.File(neurohdf_filename, 'a')) as hfile:
-        mcgroup = hfile.create_group("Microcircuit")
-        vert = mcgroup.create_group("vertices")
-        vertproperties = vert.create_group("properties")
-        conn = vert.create_group("connectivity")
-        connproperties = conn.create_group("properties")
-
-        vert.create_dataset("id", data=data['vert']['id'])
-        vertproperties.create_dataset("location", data=data['vertprop']['location'])
-        vertproperties.create_dataset("type", data=data['vertprop']['type'])
-        vertproperties.create_dataset("confidence", data=data['vertprop']['confidence'])
-        vertproperties.create_dataset("userid", data=data['vertprop']['userid'])
-        vertproperties.create_dataset("radius", data=data['vertprop']['radius'])
-
-        conn.create_dataset("id", data=data['conn']['id'])
-        connproperties.create_dataset("type", data=data['connprop']['type'])
-        
-        # TODO: add metadata fields!
-        # connproperties["type"].attrs["content_value_1_name"] = "presynaptic"
-        # content_type = "categorial
-        # content_value = [0, 1, 2, 3]
-        # content_name = ["blab", "blubb", ...]
-
+    data=get_skeleton_as_neurohdf(project_id, skeleton_id)
+    neurohdf_filename=get_temporary_neurohdf_filename()
+    create_neurohdf_file(neurohdf_filename, data)
     return HttpResponse(neurohdf_filename, mimetype="text/plain")
 
 @catmaid_login_required
@@ -367,15 +368,39 @@ def groupnode_skeleton(request, project_id=None, group_id=None, logged_in_user=N
                 next_nodes2.extend( [(ele.id, ele.class_column.class_name) for ele in newqs] )
         next_nodes = next_nodes2
 
+    vert_id=[]; vert_location=[]; vert_type=[]; vert_confidence=[]; vert_userid=[]; vert_radius=[]
+    conn_id=[]; conn_type=[]; conn_skeletonid=[]
+
     for skeleton_id in skeleton_list:
         data = get_skeleton_as_neurohdf(project_id, skeleton_id)
-        print >> sys.stderr, data
-        # TODO: bigger datastructure
-        # TODO: store to HDF5
-        # setting skeleton_id as connectivity property to group
-        
-    return HttpResponse("OK", mimetype="text/plain")
+        vert_id.append( data['vert']['id'] )
+        vert_location.append( data['vert']['location'] )
+        vert_type.append( data['vert']['type'] )
+        vert_confidence.append( data['vert']['confidence'] )
+        vert_userid.append( data['vert']['userid'] )
+        vert_radius.append( data['vert']['radius'] )
+        conn_id.append( data['conn']['id'] )
+        conn_skeletonid.append( np.ones( (len(data['conn']['id']),), dtype=np.uint32 ) * skeleton_id )
+            
+        if not data['conn']['type'] is None:
+            conn_type.append( data['conn']['type'] )
 
+    data = {'vert':{},'conn':{}}
+    data['vert']['id']=np.concatenate(vert_id)
+    data['vert']['location']=np.concatenate(vert_location)
+    data['vert']['type']=np.concatenate(vert_type)
+    data['vert']['confidence']=np.concatenate(vert_confidence)
+    data['vert']['userid']=np.concatenate(vert_userid)
+    data['vert']['radius']=np.concatenate(vert_radius)
+
+    data['conn']['id']=np.concatenate(conn_id)
+    data['conn']['skeletonid']=np.concatenate(conn_skeletonid)
+    if len(conn_type)>0:
+        data['conn']['type']=np.concatenate(conn_type)
+    print >> sys.stderr, data
+    neurohdf_filename=get_temporary_neurohdf_filename()
+    create_neurohdf_file(neurohdf_filename, data)
+    return HttpResponse(neurohdf_filename, mimetype="text/plain")
 
 
 @catmaid_login_required
