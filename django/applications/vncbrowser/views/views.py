@@ -7,9 +7,10 @@ from vncbrowser.models import CELL_BODY_CHOICES, \
     ClassInstanceClassInstance, Relation, Class, ClassInstance, \
     Project, User, Treenode, Connector, TreenodeConnector
 from vncbrowser.views import catmaid_login_required, my_render_to_response, \
-    get_form_and_neurons
+    get_form_and_neurons, neurohdf
 import json
 import re
+import os, os.path
 import sys
 try:
     import numpy as np
@@ -293,10 +294,12 @@ def get_skeleton_as_neurohdf(project_id=None, skeleton_id=None):
     return data
 
 
-def get_temporary_neurohdf_filename():
+def get_temporary_neurohdf_filename_and_url():
     fname = ''.join([choice('abcdefghijklmnopqrstuvwxyz0123456789(-_=+)') for i in range(50)])
-    # TODO: should be on the static path
-    return '/tmp/%s.h5' % fname
+    if not os.path.exists(os.path.join(settings.STATICFILES_LOCAL, 'neurohdf')):
+        os.mkdir(os.path.join(settings.STATICFILES_LOCAL, 'neurohdf'))
+    filepath = os.path.join('neurohdf', '%s.h5' % fname)
+    return os.path.join(settings.STATICFILES_LOCAL, filepath), os.path.join(settings.STATICFILES_URL, filepath)
 
 def create_neurohdf_file(filename, data):
 
@@ -332,9 +335,16 @@ def skeleton_neurohdf(request, project_id=None, skeleton_id=None, logged_in_user
     retrieve the file from the not-listed static folder
     """
     data=get_skeleton_as_neurohdf(project_id, skeleton_id)
-    neurohdf_filename=get_temporary_neurohdf_filename()
+    neurohdf_filename,neurohdf_url=get_temporary_neurohdf_filename_and_url()
     create_neurohdf_file(neurohdf_filename, data)
-    return HttpResponse(neurohdf_filename, mimetype="text/plain")
+
+    print >> sys.stderr, neurohdf_filename,neurohdf_url
+    result = {
+        'format': 'NeuroHDF',
+        'format_version': 1.0,
+        'url': neurohdf_url
+    }
+    return HttpResponse(json.dumps(result), mimetype="text/json")
 
 @catmaid_login_required
 def groupnode_skeleton(request, project_id=None, group_id=None, logged_in_user=None):
@@ -396,10 +406,16 @@ def groupnode_skeleton(request, project_id=None, group_id=None, logged_in_user=N
     data['conn']['skeletonid']=np.concatenate(conn_skeletonid)
     if len(conn_type)>0:
         data['conn']['type']=np.concatenate(conn_type)
-    print >> sys.stderr, data
-    neurohdf_filename=get_temporary_neurohdf_filename()
+
+    neurohdf_filename, neurohdf_url=get_temporary_neurohdf_filename_and_url()
     create_neurohdf_file(neurohdf_filename, data)
-    return HttpResponse(neurohdf_filename, mimetype="text/plain")
+
+    result = {
+        'format': 'NeuroHDF',
+        'format_version': 1.0,
+        'url': neurohdf_url
+    }
+    return HttpResponse(json.dumps(result), mimetype="text/json")
 
 
 @catmaid_login_required
