@@ -208,9 +208,9 @@ def get_skeleton_as_neurohdf(project_id=None, skeleton_id=None):
         treenode_xyz[i,2] = tn.location.z
         if not tn.parent_id is None:
             treenode_parentid[i] = tn.parent_id
-            treenode_type[i] = 4 # TODO: skeleton node
+            treenode_type[i] = neurohdf.VerticesTypeSkeletonNode['id']
         else:
-            treenode_type[i] = 5 # TODO: skeleton root node
+            treenode_type[i] = neurohdf.VerticesTypeSkeletonRootNode['id']
             parentrow = i
         treenode_id[i] = tn.id
         treenode_radius[i] = tn.radius
@@ -224,7 +224,7 @@ def get_skeleton_as_neurohdf(project_id=None, skeleton_id=None):
     for i in range(treenode_count):
         if i == parentrow:
             continue
-        treenode_connectivity_type[row_count] = 1 # TODO: neurite
+        treenode_connectivity_type[row_count] = neurohdf.ConnectivityNeurite['id']
         treenode_connectivity[row_count,0] = treenode_id[i]
         treenode_connectivity[row_count,1] = treenode_parentid[i]
         row_count += 1
@@ -243,10 +243,10 @@ def get_skeleton_as_neurohdf(project_id=None, skeleton_id=None):
     found_synapse=False
     for tc in qs_tc:
         if tc.relation.relation_name == 'presynaptic_to':
-            treenode_connector_connectivity_type.append( 2 ) # TODO: presynaptic type id
+            treenode_connector_connectivity_type.append( neurohdf.ConnectivityPresynaptic['id'] )
             found_synapse=True
         elif tc.relation.relation_name == 'postsynaptic_to':
-            treenode_connector_connectivity_type.append( 3 ) # TODO: presynaptic type id
+            treenode_connector_connectivity_type.append( neurohdf.ConnectivityPostsynaptic['id'] )
             found_synapse=True
         else:
             print >> std.err, "non-synaptic relation found: ", tc.relation.relation_name
@@ -258,7 +258,7 @@ def get_skeleton_as_neurohdf(project_id=None, skeleton_id=None):
         cn_confidence.append( tc.connector.confidence )
         cn_userid.append( tc.connector.user_id )
         cn_radius.append( 0 ) # default because no radius for connector
-        cn_type.append( 2 ) # TODO: connector node
+        cn_type.append( neurohdf.VerticesTypeConnectorNode['id'] )
 
     data = {'vert':{},'conn':{}}
     # check if we have synaptic connectivity at all
@@ -347,7 +347,6 @@ def groupnode_skeleton(request, project_id=None, group_id=None, logged_in_user=N
         cici_via_a__relation__relation_name__in=['part_of','model_of'],
         cici_via_a__class_instance_b=group_id)
     next_nodes = [(ele.id, ele.class_column.class_name) for ele in qs]
-    print >> sys.stderr, next_nodes
     while len(next_nodes) > 0:
         next_nodes2 = []
         for id, class_name in next_nodes:
