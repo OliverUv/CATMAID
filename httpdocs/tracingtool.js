@@ -29,7 +29,7 @@ function TracingTool()
 
 	this.resize = function( width, height )
 	{
-        self.prototype.resize( width, height );
+    self.prototype.resize( width, height );
 		return;
 	}
 

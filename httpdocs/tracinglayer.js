@@ -3,7 +3,6 @@
  */
 function TracingLayer( stack )
 {
-
   var self = this;
 
   this.svgOverlay = new SkeletonAnnotations.SVGOverlay( stack );
@@ -14,12 +13,11 @@ function TracingLayer( stack )
     return;
   }
 
-    this.beforeMove = function () {
-	this.svgOverlay.updateNodeCoordinatesinDB();
-    }
+  this.beforeMove = function ()
+  {
+    this.svgOverlay.updateNodeCoordinatesinDB();
+  }
 
-
-  /** */
 	this.redraw = function()
 	{
     // should never update from database - is called frequently
@@ -31,18 +29,10 @@ function TracingLayer( stack )
     self.svgOverlay.redraw( stack );
     return;
   };
-/*
-  this.update = function()
-  {
-      // this fetches from the database, e.g. after deleting a node in the object tree
-      self.svgOverlay.updateNodes();
-      self.svgOverlay.redraw( stack );
-  }*/
 
 	this.unregister = function()
 	{
         // TODO Remove the SVG raphael object from the DOM
 	};
-
 
 }
