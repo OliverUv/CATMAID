@@ -60,6 +60,7 @@
 		<script type="text/javascript" src="selector.js"></script>
 		<script type="text/javascript" src="tracingtool.js"></script>
 		<script type="text/javascript" src="tracinglayer.js"></script>
+        <script type="text/javascript" src="textlabeltool.js"></script>
 		<!--[if gte IE 5]>
 		<script type="text/javascript" src="libs/excanvas/excanvas.js"></script>
 		<script type="text/javascript">var IE = true;</script>
@@ -109,7 +110,7 @@
                     <a href="#" class="button" id="key_help_button" onclick="WindowMaker.show('keyboard-shortcuts');"><img src="widgets/themes/kde/help.png" alt="help for key shortcuts" title="help for key shortcuts" /></a>
 				</div>
 				<div class="box" id="toolbox_edit" style="display:none">
-					<a href="#" class="button" id="edit_button_text" onclick="project.setMode( 'text' );"><img src="widgets/themes/kde/text.gif" alt="text" title="text" /></a>
+					<a href="#" class="button" id="edit_button_text" onclick="project.setTool( new TextlabelTool() );"><img src="widgets/themes/kde/text.gif" alt="text" title="text" /></a>
 					<a href="#" class="button" id="edit_button_crop" onclick="project.setMode( 'crop' );"><img src="widgets/themes/kde/crop.gif" alt="crop microstack" title="crop microstack" /></a>
 					<a href="#" class="button" id="edit_button_trace" onclick="project.setTool( new TracingTool() );"><img src="widgets/themes/kde/trace.gif" alt="trace" title="trace" /></a>
 					<!--<a href="#" class="button" id="edit_button_profile" onclick="project.setMode( 'profile' );"><img src="widgets/themes/kde/draw.gif" alt="profile" title="profile" /></a>-->
