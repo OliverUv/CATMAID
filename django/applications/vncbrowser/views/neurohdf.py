@@ -2,17 +2,17 @@
 
 VerticesTypeSkeletonNode = {
     'name': 'skeleton',
-    'id:': 1
+    'id': 1
 }
 
 VerticesTypeSkeletonRootNode = {
     'name': 'skeleton root',
-    'id:': 1
+    'id': 1
 }
 
 VerticesTypeConnectorNode = {
     'name': 'connector',
-    'id:': 1
+    'id': 1
 }
 
 ConnectivityNeurite = {
