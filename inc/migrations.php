@@ -11,12 +11,12 @@ class Migration {
 	function apply( $db, $ignoreErrors ) {
 		try {
 			error_log("Running the migration: ".$this->name);
-			$db->getResult("SAVEPOINT sp");
+			$db->getResult("SAVEPOINT generic_migration");
 			$db->getResult($this->sql);
 		} catch( Exception $e ) {
 			if ($ignoreErrors) {
 				error_log("Ignoring the failed migration: ".$e);
-				$db->getResult("ROLLBACK TO SAVEPOINT sp");
+				$db->getResult("ROLLBACK TO SAVEPOINT generic_migration");
 			} else {
 				error_log("The migration failed: ".$e);
 				throw $e;
@@ -34,7 +34,7 @@ class SpecialConnectorMigration {
     function apply( $db, $ignoreErrors) {
         try {
             error_log("Running the migration: ".$this->name);
-			$db->getResult("SAVEPOINT sp");
+            $db->getResult("SAVEPOINT connector_migration");
 
             foreach( $db->getResult("SELECT id FROM project") as $p ) {
                 $project_id = $p['id'];
@@ -126,7 +126,7 @@ EOSQL
 		} catch( Exception $e ) {
 			if ($ignoreErrors) {
 				error_log("Ignoring the failed migration: ".$e);
-				$db->getResult("ROLLBACK TO SAVEPOINT sp");
+				$db->getResult("ROLLBACK TO SAVEPOINT connector_migration");
 			} else {
 				error_log("The migration failed: ".$e);
 				throw $e;
@@ -143,9 +143,16 @@ class AddSkeletonIDsMigration {
     function apply( $db, $ignoreErrors) {
         try {
             error_log("Running the migration: ".$this->name);
-			$db->getResult("SAVEPOINT sp");
+            $db->getResult("SAVEPOINT add_skeleton_column");
 
-            $db->getResult("ALTER TABLE treenode ADD COLUMN skeleton_id bigint REFERENCES class_instance(id)");
+            try {
+                $db->getResult("ALTER TABLE treenode ADD COLUMN skeleton_id bigint REFERENCES class_instance(id)");
+            } catch( Exception $e ) {
+                error_log("Ignoring the failure to add a skeleton_id column to treenode; it's probably already there.");
+                $db->getResult("ROLLBACK TO SAVEPOINT add_skeleton_column");
+            }
+
+            $db->getResult("SAVEPOINT update_skeleton_columns");
 
             foreach( $db->getResult("SELECT id FROM project") as $p ) {
                 $project_id = $p['id'];
@@ -179,7 +186,7 @@ class AddSkeletonIDsMigration {
 		} catch( Exception $e ) {
 			if ($ignoreErrors) {
 				error_log("Ignoring the failed migration: ".$e);
-				$db->getResult("ROLLBACK TO SAVEPOINT sp");
+				$db->getResult("ROLLBACK TO SAVEPOINT update_skeleton_columns");
 			} else {
 				error_log("The migration failed: ".$e);
 				throw $e;
@@ -703,7 +710,7 @@ CREATE TABLE broken_slice (
 EOMIGRATION
 ),
 
-	'2011-07-28T16:10:19' => new SpecialConnectorMigration(),
+	'2011-10-30T16:10:19' => new SpecialConnectorMigration(),
 
 	'2011-11-23T10:18:23' => new AddSkeletonIDsMigration(),
 
