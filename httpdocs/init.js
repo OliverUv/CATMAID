@@ -190,6 +190,7 @@ function updateProjects() {
   project_menu_open.update(null);
 
   document.getElementById("projects_h").style.display = "none";
+  document.getElementById("project_filter_form").style.display = "none";
 
   var pp = document.getElementById("projects_dl");
 
@@ -203,6 +204,8 @@ function updateProjects() {
   requestQueue.register('model/project.list.php', 'GET', undefined, handle_updateProjects);
   return;
 }
+
+var cachedProjectsInfo = null;
 
 /**
  * handle a project-menu-update-request answer
@@ -218,49 +221,13 @@ function handle_updateProjects(status, text, xml) {
     var keep_project_alive = false;
     var keep_project_editable = false;
 
-    var pp = document.getElementById("projects_dl");
-    while (pp.firstChild) pp.removeChild(pp.firstChild);
-
     if (e.error) {
       project_menu_open.update();
       alert(e.error);
     } else {
-      for (var i in e) {
-        if (project && project.id == i) {
-          keep_project_alive = true;
-          keep_project_editable = e[i].editable;
-        }
-
-        var dt = document.createElement("dt");
-        dt.appendChild(document.createTextNode(e[i].title));
-
-        document.getElementById("projects_h").style.display = "block";
-        pp.appendChild(dt);
-
-        for (var j in e[i].action) {
-          var dd = document.createElement("dd");
-          var a = document.createElement("a");
-          var ddc = document.createElement("dd");
-          a.href = e[i].action[j].action;
-          a.appendChild(document.createTextNode(e[i].action[j].title));
-          dd.appendChild(a);
-          pp.appendChild(dd);
-          if (e[i].action[j].comment) {
-            var ddc = document.createElement("dd");
-            ddc.innerHTML = e[i].action[j].comment;
-            pp.appendChild(ddc);
-          }
-        }
-        if (e[i].catalogue) {
-          var catalogueElement = document.createElement('dd');
-          var catalogueElementLink = document.createElement('a');
-          catalogueElementLink.href = 'dj/' + i
-          catalogueElementLink.appendChild(document.createTextNode('Browse the Neuron Catalogue'));
-          catalogueElement.appendChild(catalogueElementLink);
-          pp.appendChild(catalogueElement);
-        }
-      }
-      project_menu_open.update(e)
+      $('#project_filter_form').show();
+      cachedProjectsInfo = e;
+      updateProjectListFromCache();
     }
     if (project) {
       if (keep_project_alive) project.setEditable(keep_project_editable);
@@ -272,6 +239,86 @@ function handle_updateProjects(status, text, xml) {
   }
   ui.releaseEvents();
   return;
+}
+
+function updateProjectListMessage(text) {
+  $('#project_list_message').text(text);
+}
+
+function updateProjectListFromCache(pp) {
+  var matchingProjects = 0,
+      searchString = $('#project_filter_text').val(),
+      display,
+      re = new RegExp(searchString, "i"),
+      title,
+      toappend,
+      i, j, k,
+      dt, dd, a, ddc,
+      p,
+      catalogueElement, catalogueElementLink,
+      pp = document.getElementById("projects_dl");
+  while (pp.firstChild) pp.removeChild(pp.firstChild);
+  updateProjectListMessage('');
+  for (i in cachedProjectsInfo) {
+    p = cachedProjectsInfo[i];
+    display = false;
+    toappend = [];
+    if (project && project.id == i) {
+      keep_project_alive = true;
+      keep_project_editable = p.editable;
+    }
+
+    dt = document.createElement("dt");
+
+    title = p.title;
+    if (re.test(title)) {
+      display = true;
+    }
+    dt.appendChild(document.createTextNode(p.title));
+
+    document.getElementById("projects_h").style.display = "block";
+    document.getElementById("project_filter_form").style.display = "block";
+    toappend.push(dt);
+
+    for (j in p.action) {
+      dd = document.createElement("dd");
+      a = document.createElement("a");
+      ddc = document.createElement("dd");
+      a.href = p.action[j].action;
+      title = p.action[j].title;
+      if (re.test(title)) {
+        display = true;
+      }
+      a.appendChild(document.createTextNode(title));
+      dd.appendChild(a);
+      toappend.push(dd);
+      if (p.action[j].comment) {
+        ddc = document.createElement("dd");
+        ddc.innerHTML = p.action[j].comment;
+        toappend.push(ddc);
+      }
+    }
+    if (p.catalogue) {
+      catalogueElement = document.createElement('dd');
+      catalogueElementLink = document.createElement('a');
+      catalogueElementLink.href = 'dj/' + i
+      catalogueElementLink.appendChild(document.createTextNode('Browse the Neuron Catalogue'));
+      catalogueElement.appendChild(catalogueElementLink);
+      toappend.push(appendChild(catalogueElement));
+    }
+    if (display) {
+      ++ matchingProjects;
+      for (k = 0; k < toappend.length; ++k) {
+        pp.appendChild(toappend[k]);
+      }
+    }
+  }
+  if (cachedProjectsInfo.length === 0) {
+    updateProjectListMessage("No CATMAID projects have been created");
+  } else if (matchingProjects === 0) {
+    updateProjectListMessage("No projects matched '"+searchString+"'");
+  }
+  project_menu_open.update(cachedProjectsInfo);
 }
 
 /**
