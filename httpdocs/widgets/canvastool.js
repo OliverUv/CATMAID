@@ -23,6 +23,34 @@ function CanvasTool()
         return;
     };
 
+    var fetchImageAndDrawToCanvas = function(pos_x, pos_y, pos_z, dx, dy) {
+
+        var url = 'http://localhost:8000/1/stack/1/channel/canvas' +
+            '/x/' + pos_x +
+            '/y/' + pos_y +
+            '/dx/' + dx +
+            '/dy/' + dy +
+            '/z/' + pos_z + '/png';
+        console.log("fetch image", url);
+
+        fabric.Image.fromURL(url, function(image) {
+            console.log("callback called", image);
+            image.set({
+                          left: dx/2,
+                          top: dy/2,
+                          width: dx,
+                          height: dy,
+                          opacity: 0.5,
+                          lockMovementY: true,
+                          lockMovementX: true,
+                      });
+            canvasLayer.canvas.add(image).bringToBack();
+        });
+        /*canvasLayer.canvas.setBackgroundImage(url,
+            canvasLayer.canvas.renderAll.bind(canvasLayer.canvas));*/
+
+
+    };
 
     var createControlBox = function() {
         console.log('stack', stack)
@@ -65,7 +93,8 @@ function CanvasTool()
         var html = '<button id="drawing-mode">Enter drawing mode</button>' +
             '<div style="display:none;" id="drawing-mode-options">' +
             'Width: <input value="10" id="drawing-line-width" size="2">' +
-            'Color: <input type="color" value="rgb(0,0,0)" id="drawing-color" size="15"></div>';
+            'Color: <input type="color" value="rgb(0,0,0)" id="drawing-color" size="15"></div>' +
+            '<label><span>Width:</span> <input type="range" id="width-control" value="10" min="5" max="50" step="5"></label> ';
         brush.innerHTML = html;
         controls.appendChild( brush );
 
@@ -128,12 +157,28 @@ function CanvasTool()
         // view is the mouseCatcher now
         var view = canvasLayer.view;
 
-        /*
-        var proto_onmousedown = view.onmousedown;
         view.onmousedown = function( e ) {
             console.log("onmouse down", ui.getMouseButton( e ) );
+
+            // retrieve the absolute pixel coordinates clicked
+            var m = ui.getMouse(e, this);
+
+            // take into account current local offset coordinates and scale
+            var pos_x = m.offsetX;
+            var pos_y = m.offsetY;
+            var pos_z = stack.z;
+            var dx = Math.floor(stack.dimension.x * stack.scale);
+            var dy = Math.floor(stack.dimension.y * stack.scale);
+
+            console.log("pos x,y", pos_x, pos_y, stack.z);
+
+            if(e.ctrlKey) {
+                // fetch image
+                fetchImageAndDrawToCanvas(pos_x, pos_y, pos_z, dx, dy);
+            }
+
             return;
-        };*/
+        };
 
         var proto_changeSlice = self.prototype.changeSlice;
         self.prototype.changeSlice =

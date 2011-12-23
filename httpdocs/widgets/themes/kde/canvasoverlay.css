@@ -18,7 +18,11 @@ div.canvasControls
     margin:0px;
     padding:0px;
     border:solid 2px #FF0000;
+    color: #FFFFFF;
     /*cursor:pointer;
   border:solid 2px #0000FF;*/
 
 }
+
+label span { width: 50px; display: inline-block }
+*[type=range] { position: relative; top: 4px }

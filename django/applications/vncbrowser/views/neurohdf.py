@@ -49,22 +49,54 @@ ConnectivityPostsynaptic = {
     'id': 3
 }
 
+import math
 
-def get_image(request, project_id=None, stack_id=None, x=None, y=None, dx=None, dy=None, z=None):
+def floatRgb(mag, cmin, cmax):
+    """
+    Return a tuple of floats between 0 and 1 for the red, green and
+    blue amplitudes.
+    Credit:
+    http://code.activestate.com/recipes/52273-colormap-returns-an-rgb-tuple-on-a-0-to-255-scale-/
+    """
+
+    try:
+        # normalize to [0,1]
+        x = float(mag-cmin)/float(cmax-cmin)
+    except:
+        # cmax = cmin
+        x = 0.5
+    blue = min((max((4*(0.75-x), 0.)), 1.))
+    red  = min((max((4*(x-0.25), 0.)), 1.))
+    green= min((max((4*math.fabs(x-0.5)-1., 0.)), 1.))
+    return (red, green, blue)
+
+def get_image(request, project_id=None, stack_id=None, channel=None,
+              x=None, y=None, dx=None, dy=None, z=None):
     fpath=os.path.join( settings.HDF5_STORAGE_PATH, '{0}_{1}.hdf'.format( project_id, stack_id ) )
 
     print >> sys.stderr, 'fpath', fpath
-    print 'exists', os.path.exists(fpath)
-    with closing(h5py.File(fpath, 'r')) as hfile:
-        image_data=hfile[str(z)].value
-
+    print 'exists', os.path.exists(fpath), channel
+    hfile=h5py.File(fpath, 'r')
+    hdfpath='/channel/{0}/section/{1}/data'.format(channel, z)
+    image_data=hfile[hdfpath].value
+    hfile.close()
+    cmin=image_data.min()
+    cmax=image_data.max()
+    w,h=image_data.shape
+    img = np.empty((w,h),np.uint32)
+    """
+    for i in range(w):
+        for j in range(h):
+            red, green, blue = floatRgb(image_data[i,j], cmin, cmax)
+            col="0x%02x%02x%02x" % (red*255, green*255, blue*255)
+            #print "color", col
+            img[i,j]=int(col,0)
+"""
     # image = Image.fromarray(image_data[:500,:500].T)
     # TODO: define a map from skeleton ids stored in the HDF5 to colors & back
-    w,h=1000,800
-    img = np.empty((w,h),np.uint32)
-    img.shape=h,w
-    img[0,0]=0x800000FF
-    img[:400,:400]=0xFFFF0000
+    w,h=int(dx),int(dy)
+    img = np.empty((h,w),np.uint32)
+    img[:int(dy),:int(dx)]=0xFFFF0000
     pilImage = Image.frombuffer('RGBA',(w,h),img,'raw','RGBA',0,1)
     response = HttpResponse(mimetype="image/png")
     pilImage.save(response, "PNG")
