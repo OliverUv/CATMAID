@@ -25,6 +25,25 @@ function CanvasTool()
 
     var fetchImageAndDrawToCanvas = function(pos_x, pos_y, pos_z, dx, dy) {
 
+        var top;
+        var left;
+        var effectiveTileHeight = 256;
+        var effectiveTileWidth = 256;
+
+        if ( stack.yc >= 0 )
+            top  = -( stack.yc % effectiveTileHeight );
+        else
+            top  = -( ( stack.yc + 1 ) % effectiveTileHeight ) - effectiveTileHeight + 1;
+        if ( stack.xc >= 0 )
+            left = -( stack.xc % effectiveTileWidth );
+        else
+            left = -( ( stack.xc + 1 ) % effectiveTileWidth ) - effectiveTileWidth + 1;
+
+        // TODO: how to find subsection
+        console.log("top, left", top, left);
+        console.log("topleft", stack.getWorldTopLeftPixel(), stack.resolution, stack.dimension, stack.viewWidth,  stack.viewHeight)
+        // The size is derivable here.
+
         var url = 'http://localhost:8000/1/stack/1/channel/canvas' +
             '/x/' + pos_x +
             '/y/' + pos_y +

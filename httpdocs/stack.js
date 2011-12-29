@@ -134,6 +134,20 @@ function Stack(
       scale : self.scale
     }
   }
+
+  /*
+   * Get the top and left coordinates in pixel project coordinates of
+   * stack's window
+   */
+  this.getWorldTopLeftPixel = function()
+  {
+    return {
+      worldTop : ( ( self.y - self.viewHeight / self.scale / 2 ) ),
+      worldLeft : ( ( self.x - self.viewWidth / self.scale / 2 ) ),
+      scale : self.scale
+    }
+  }
+
   
 	/**
 	 * align and update the tiles to be ( x, y ) in the image center
