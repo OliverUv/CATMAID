@@ -628,7 +628,7 @@ function TracingTool()
 }
 
 TracingTool.goToNearestInNeuron = function(type, objectID) {
-  parameters = {
+  var parameters = {
     pid: project.id,
     x: project.x,
     y: project.y,
