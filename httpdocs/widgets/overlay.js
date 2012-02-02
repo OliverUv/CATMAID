@@ -1413,6 +1413,7 @@ var SkeletonAnnotations = new function()
 
     // Commands for the sub-buttons of the tracing tool
     this.tracingCommand = function (m) {
+      var nodeIDToActivate;
       switch (m) {
       case "skeleton":
         self.set_tracing_mode("skeletontracing");
@@ -1423,11 +1424,15 @@ var SkeletonAnnotations = new function()
       case "goparent":
         if (null !== atn.id) {
           if (null !== atn.parent) {
+            nodeIDToActivate = atn.parent.id;
             stack.getProject().moveTo(
               self.pix2physZ(atn.parent.z),
               self.pix2physY(atn.parent.y),
-              self.pix2physX(atn.parent.x));
-            window.setTimeout("SkeletonAnnotations.staticSelectNode( " + atn.parent.id + " )", 1000);
+              self.pix2physX(atn.parent.x),
+              undefined,
+              function () {
+                SkeletonAnnotations.staticSelectNode(nodeIDToActivate);
+              });
           }
         } else {
           alert("No active node selected.");
