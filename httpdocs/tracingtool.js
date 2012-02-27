@@ -27,11 +27,11 @@ function TracingTool()
   var bindings = {};
   this.toolname = "tracingtool";
 
-	this.resize = function( width, height )
-	{
-        self.prototype.resize( width, height );
-		return;
-	};
+  this.resize = function( width, height )
+  {
+    self.prototype.resize( width, height );
+    return;
+  };
 
   this.updateLayer = function()
   {
