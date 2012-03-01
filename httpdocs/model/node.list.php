@@ -184,6 +184,7 @@ try {
           AND (treenode.location).y <= ($top + $height)
           AND (treenode.location).z >= ($z - $zbound * $zres)
           AND (treenode.location).z <= ($z + $zbound * $zres)
+          AND treenode.user_id = $uid
       LIMIT $limit"
       );
 
@@ -216,7 +217,7 @@ try {
          'treenode' AS type
      FROM treenode
      WHERE
-      skeleton_id = $active_skeleton_id"
+      skeleton_id = $active_skeleton_id AND treenode.user_id = $uid"
     );
 
     if (false === $extra_treenodes) {
@@ -257,6 +258,7 @@ try {
             (connector.location).y <= ($top + $height) AND
             (connector.location).z >= ($z - $zbound * $zres) AND
             (connector.location).z <= ($z + $zbound * $zres)
+            AND connector.user_id = $uid
         ORDER BY id, z_diff LIMIT $limit"
   );
 
@@ -293,7 +295,7 @@ try {
          'treenode' AS type
      FROM treenode
      WHERE
-      id IN ($comma_separated_treenode_ids)"
+      id IN ($comma_separated_treenode_ids) AND treenode.user_id = $uid"
     );
 
           if (false === $extra_treenodes) {
