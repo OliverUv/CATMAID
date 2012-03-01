@@ -217,32 +217,6 @@ var toolActions = [
 var editToolActions = [
 
 	new Action({
-		helpText: "Text label tool",
-		buttonID: 'edit_button_text',
-		buttonName: 'text',
-		keyShortcuts: {
-			'X': [ 88 ]
-		},
-		run: function (e) {
-			project.setMode( 'text' );
-			return true;
-		}
-	}),
-
-	new Action({
-		helpText: "Crop tool",
-		buttonID: 'edit_button_crop',
-		buttonName: 'crop',
-		keyShortcuts: {
-			'C': [ 67 ]
-		},
-		run: function (e) {
-			project.setMode( 'crop' );
-			return true;
-		}
-	}),
-
-	new Action({
 		helpText: "Tracing tool",
 		buttonID: 'edit_button_trace',
 		buttonName: 'trace',
@@ -279,51 +253,7 @@ var tracingWindowActions = [
       WindowMaker.show('node-table');
       return true;
     }
-  }),
-
-  new Action({
-    helpText: "Show connector table",
-    buttonID: "data_button_table_connector",
-    buttonName: 'table_connector',
-    run: function (e) {
-      WindowMaker.show( 'connector-table' );
-      return true;
-    }
-  }),
-
-  new Action({
-    helpText: "Show object tree",
-    buttonID: "data_button_tree",
-    buttonName: 'tree',
-    run: function (e) {
-      WindowMaker.show('object-tree');
-      return true;
-    }
-  }),
-
-  new Action({
-    helpText: "Show search window",
-    buttonID: "data_button_search",
-    buttonName: 'search',
-    keyShortcuts: {
-      '/': [ 191, 47 ]
-    },
-    run: function (e) {
-      WindowMaker.show('search');
-      return true;
-    }
-  }),
-
-  new Action({
-    helpText: "Show project statistics",
-    buttonID: "data_button_stats",
-    buttonName: 'stats',
-    run: function (e) {
-      WindowMaker.show('statistics');
-      return true;
-    }
   })
-
 
 /*
   new Action({
